@@ -68,6 +68,14 @@ const postCSSLoaderOptions = {
     autoprefixer({
       flexbox: 'no-2009',
     }),
+    require('postcss-url')({
+      url: function (asset) {
+        if (asset.url.charAt(0) === '/') {
+          return publicUrl + asset.url;
+        }
+        return asset.url;
+      }
+    })
   ],
   sourceMap: shouldUseSourceMap,
 };
