@@ -11,12 +11,13 @@ const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
 const paths = require('../../config/paths');
+const USE_TS = process.env.DEV_LANG === 'typescript';
 
 module.exports = (resolve, rootDir, srcRoots) => {
   // Use this instead of `paths.testsSetup` to avoid putting
   // an absolute filename into configuration after ejecting.
   const setupTestsFile = fs.existsSync(paths.testsSetup)
-    ? '<rootDir>/src/setupTests.js'
+    ? `<rootDir>/src/setupTests.${USE_TS ? 'tsx' : 'js'}`
     : undefined;
 
   const toRelRootDir = f => '<rootDir>/' + path.relative(rootDir || '', f);
@@ -24,12 +25,12 @@ module.exports = (resolve, rootDir, srcRoots) => {
   // TODO: I don't know if it's safe or not to just use / as path separator
   // in Jest configs. We need help from somebody with Windows to determine this.
   const config = {
-    collectCoverageFrom: ['src/**/*.{js,jsx,mjs}'],
+    collectCoverageFrom: [`src/**/*.{js,jsx,mjs,${USE_TS ? 'ts,tsx' : ''}`],
     setupFiles: [resolve('config/polyfills.js')],
     setupTestFrameworkScriptFile: setupTestsFile,
     testMatch: [
-      '**/__tests__/**/*.{js,jsx,mjs}',
-      '**/?(*.)(spec|test).{js,jsx,mjs}',
+      '**/__tests__/**/*.(j|t|mj)s?(x)',
+      '**/?(*.)(spec|test).(j|t|mj)s?(x)',
     ],
     // where to search for files/tests
     roots: srcRoots.map(toRelRootDir),
@@ -39,12 +40,13 @@ module.exports = (resolve, rootDir, srcRoots) => {
       '^.+\\.(js|jsx|mjs)$': resolve('config/jest/babelTransform.js'),
       '^.+\\.css$': resolve('config/jest/cssTransform.js'),
       '^.+\\.(graphql)$': resolve('config/jest/graphqlTransform.js'),
+      '^.+\\.tsx?$': resolve('config/jest/typescriptTransform.js'),
       '^(?!.*\\.(js|jsx|mjs|css|json|graphql)$)': resolve(
         'config/jest/fileTransform.js'
       ),
     },
     transformIgnorePatterns: [
-      '[/\\\\]node_modules[/\\\\].+\\.(js|jsx|mjs)$',
+      '[/\\\\]node_modules[/\\\\].+\\.(js|jsx|mjs|ts|tsx)$',
       '^.+\\.module\\.css$',
     ],
     moduleNameMapper: {
@@ -52,6 +54,10 @@ module.exports = (resolve, rootDir, srcRoots) => {
       '^.+\\.module\\.css$': 'identity-obj-proxy',
     },
     moduleFileExtensions: [
+      'web.ts',
+      'ts',
+      'web.tsx',
+      'tsx',
       'web.js',
       'mjs',
       'js',
@@ -60,6 +66,11 @@ module.exports = (resolve, rootDir, srcRoots) => {
       'jsx',
       'node',
     ],
+    globals: {
+      'ts-jest': {
+        tsConfigFile: paths.appTsTestConfig,
+      },
+    },
   };
   if (rootDir) {
     config.rootDir = rootDir;
@@ -74,6 +85,7 @@ module.exports = (resolve, rootDir, srcRoots) => {
     'resetModules',
     'snapshotSerializers',
     'watchPathIgnorePatterns',
+    'moduleNameMapper',
   ];
   if (overrides) {
     supportedKeys.forEach(key => {
@@ -94,7 +106,7 @@ module.exports = (resolve, rootDir, srcRoots) => {
               chalk.bold('setupTestFrameworkScriptFile') +
               ' in your package.json.\n\n' +
               'Remove it from Jest configuration, and put the initialization code in ' +
-              chalk.bold('src/setupTests.js') +
+              chalk.bold(`src/setupTests.${USE_TS ? 'tsx' : 'js'}`) +
               '.\nThis file will be loaded automatically.\n'
           )
         );
