@@ -13,6 +13,9 @@ const fs = require('fs');
 const url = require('url');
 const findMonorepo = require('react-dev-utils/workspaceUtils').findMonorepo;
 
+const LANG = process.env.DEV_LANG || 'javascript';
+const EXT = LANG === 'javascript' ? '.js' : '.tsx';
+
 // Make sure any symlinks in the project folder are resolved:
 // https://github.com/facebook/create-react-app/issues/637
 const appDirectory = fs.realpathSync(process.cwd());
@@ -54,12 +57,15 @@ module.exports = {
   appBuild: resolveApp('build'),
   appPublic: resolveApp('public'),
   appHtml: resolveApp('public/index.html'),
-  appIndexJs: resolveApp('src/index.js'),
+  appIndexJs: resolveApp(`src/index${EXT}`),
   appPackageJson: resolveApp('package.json'),
   appSrc: resolveApp('src'),
-  testsSetup: resolveApp('src/setupTests.js'),
+  testsSetup: resolveApp(`src/setupTests${EXT}`),
   appNodeModules: resolveApp('node_modules'),
   publicUrl: getPublicUrl(resolveApp('package.json')),
+  appTsConfig: resolveApp('tsconfig.json'),
+  appTsProdConfig: resolveApp('tsconfig.prod.json'),
+  appTsLint: resolveApp('tslint.json'),
   servedPath: getServedPath(resolveApp('package.json')),
 };
 
@@ -75,12 +81,16 @@ module.exports = {
   appBuild: resolveApp('build'),
   appPublic: resolveApp('public'),
   appHtml: resolveApp('public/index.html'),
-  appIndexJs: resolveApp('src/index.js'),
+  appIndexJs: resolveApp(`src/index${EXT}`),
   appPackageJson: resolveApp('package.json'),
   appSrc: resolveApp('src'),
-  testsSetup: resolveApp('src/setupTests.js'),
+  testsSetup: resolveApp(`src/setupTests${EXT}`),
   appNodeModules: resolveApp('node_modules'),
   publicUrl: getPublicUrl(resolveApp('package.json')),
+  appTsConfig: resolveApp('tsconfig.json'),
+  appTsTestConfig: resolveApp('tsconfig.test.json'),
+  appTsProdConfig: resolveApp('tsconfig.prod.json'),
+  appTsLint: resolveApp('tslint.json'),
   servedPath: getServedPath(resolveApp('package.json')),
   // These properties only exist before ejecting:
   ownPath: resolveOwn('.'),
@@ -100,11 +110,15 @@ if (useTemplate) {
     appBuild: resolveOwn('../../build'),
     appPublic: resolveOwn('template/public'),
     appHtml: resolveOwn('template/public/index.html'),
-    appIndexJs: resolveOwn('template/src/index.js'),
+    appIndexJs: resolveOwn(`template/src/index${EXT}`),
     appPackageJson: resolveOwn('package.json'),
     appSrc: resolveOwn('template/src'),
-    testsSetup: resolveOwn('template/src/setupTests.js'),
+    testsSetup: resolveOwn(`template/src/setupTests${EXT}`),
     appNodeModules: resolveOwn('node_modules'),
+    appTsConfig: resolveOwn('template/tsconfig.json'),
+    appTsProdConfig: resolveOwn('template/tsconfig.prod.json'),
+    appTsLint: resolveOwn('template/tslint.json'),
+    appTsTestConfig: resolveOwn('template/tsconfig.test.json'),
     publicUrl: getPublicUrl(resolveOwn('package.json')),
     servedPath: getServedPath(resolveOwn('package.json')),
     // These properties only exist before ejecting:

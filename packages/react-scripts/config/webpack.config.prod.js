@@ -8,6 +8,7 @@
 // @remove-on-eject-end
 'use strict';
 
+const LANG = process.env.DEV_LANG;
 const autoprefixer = require('autoprefixer');
 const path = require('path');
 const webpack = require('webpack');
@@ -19,9 +20,11 @@ const InterpolateHtmlPlugin = require('react-dev-utils/InterpolateHtmlPlugin');
 const SWPrecacheWebpackPlugin = require('sw-precache-webpack-plugin');
 const eslintFormatter = require('react-dev-utils/eslintFormatter');
 const ModuleScopePlugin = require('react-dev-utils/ModuleScopePlugin');
+const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const getCSSModuleLocalIdent = require('react-dev-utils/getCSSModuleLocalIdent');
 const paths = require('./paths');
 const getClientEnvironment = require('./env');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 // Webpack uses `publicPath` to determine where the app is being served from.
 // It requires a trailing slash, or the file assets will get an incorrect path.
@@ -66,10 +69,10 @@ const postCSSLoaderOptions = {
   plugins: () => [
     require('postcss-flexbugs-fixes'),
     autoprefixer({
-      flexbox: 'no-2009',
+      flexbox: 'no-2009'
     }),
     require('postcss-url')({
-      url: function (asset) {
+      url: function(asset) {
         if (asset.url.charAt(0) === '/') {
           return publicUrl + asset.url;
         }
@@ -77,7 +80,7 @@ const postCSSLoaderOptions = {
       }
     })
   ],
-  sourceMap: shouldUseSourceMap,
+  sourceMap: shouldUseSourceMap
 };
 
 // style files regexes
@@ -91,19 +94,19 @@ const getStyleLoaders = (cssOptions, preProcessor) => {
   const loaders = [
     {
       loader: require.resolve('css-loader'),
-      options: cssOptions,
+      options: cssOptions
     },
     {
       loader: require.resolve('postcss-loader'),
-      options: postCSSLoaderOptions,
-    },
+      options: postCSSLoaderOptions
+    }
   ];
   if (preProcessor) {
     loaders.push({
       loader: require.resolve(preProcessor),
       options: {
-        sourceMap: shouldUseSourceMap,
-      },
+        sourceMap: shouldUseSourceMap
+      }
     });
   }
   return ExtractTextPlugin.extract(
@@ -112,10 +115,10 @@ const getStyleLoaders = (cssOptions, preProcessor) => {
         fallback: {
           loader: require.resolve('style-loader'),
           options: {
-            hmr: false,
-          },
+            hmr: false
+          }
         },
-        use: loaders,
+        use: loaders
       },
       extractTextPluginOptions
     )
@@ -145,9 +148,7 @@ module.exports = {
     publicPath: publicPath,
     // Point sourcemap entries to original disk location (format as URL on Windows)
     devtoolModuleFilenameTemplate: info =>
-      path
-        .relative(paths.appSrc, info.absoluteResourcePath)
-        .replace(/\\/g, '/'),
+      path.relative(paths.appSrc, info.absoluteResourcePath).replace(/\\/g, '/')
   },
   resolve: {
     // This allows you to set a fallback for where Webpack should look for modules.
@@ -164,7 +165,21 @@ module.exports = {
     // https://github.com/facebook/create-react-app/issues/290
     // `web` extension prefixes have been added for better support
     // for React Native Web.
-    extensions: ['.web.js', '.mjs', '.js', '.json', '.web.jsx', '.jsx'],
+    extensions:
+      LANG === 'typescript'
+        ? [
+            '.mjs',
+            '.web.ts',
+            '.ts',
+            '.web.tsx',
+            '.tsx',
+            '.web.js',
+            '.js',
+            '.json',
+            '.web.jsx',
+            '.jsx'
+          ]
+        : ['.web.js', '.mjs', '.js', '.json', '.web.jsx', '.jsx'],
     alias: {
       // @remove-on-eject-begin
       // Resolve Babel runtime relative to react-scripts.
@@ -177,7 +192,7 @@ module.exports = {
       // @remove-on-eject-end
       // Support React Native Web
       // https://www.smashingmagazine.com/2016/08/a-glimpse-into-the-future-with-react-native-for-web/
-      'react-native': 'react-native-web',
+      'react-native': 'react-native-web'
     },
     plugins: [
       // Prevents users from importing files from outside of src/ (or node_modules/).
@@ -185,8 +200,12 @@ module.exports = {
       // To fix this, we prevent you from importing files out of src/ -- if you'd like to,
       // please link the files into your node_modules/ and let module-resolution kick in.
       // Make sure your source files are compiled, as they will not be processed in any way.
-      new ModuleScopePlugin(paths.appSrc, [paths.appPackageJson]),
-    ],
+      new ModuleScopePlugin(paths.appSrc, [paths.appPackageJson])
+    ].concat(
+      LANG === 'typescript'
+        ? [new TsconfigPathsPlugin({ configFile: paths.appTsProdConfig })]
+        : []
+    )
   },
   module: {
     strictExportPresence: true,
@@ -200,25 +219,27 @@ module.exports = {
         test: /\.(js|jsx|mjs)$/,
         enforce: 'pre',
         use: [
-          {
-            options: {
-              formatter: eslintFormatter,
-              eslintPath: require.resolve('eslint'),
-              // TODO: consider separate config for production,
-              // e.g. to enable no-console and no-debugger only in production.
-              baseConfig: {
-                extends: [require.resolve('eslint-config-react-app')],
-              },
-              // @remove-on-eject-begin
-              ignore: false,
-              useEslintrc: false,
-              // @remove-on-eject-end
-            },
-            loader: require.resolve('eslint-loader'),
-          },
+          LANG === 'javascript'
+            ? {
+                options: {
+                  formatter: eslintFormatter,
+                  eslintPath: require.resolve('eslint'),
+                  baseConfig: {
+                    extends: [require.resolve('eslint-config-react-app')]
+                  },
+                  // @remove-on-eject-begin
+                  ignore: false,
+                  useEslintrc: false
+                  // @remove-on-eject-end
+                },
+                loader: require.resolve('eslint-loader')
+              }
+            : {
+                loader: require.resolve('source-map-loader')
+              }
         ],
         include: paths.srcPaths,
-        exclude: [/[/\\\\]node_modules[/\\\\]/],
+        exclude: [/[/\\\\]node_modules[/\\\\]/]
       },
       {
         // "oneOf" will traverse all following loaders until one will
@@ -232,8 +253,8 @@ module.exports = {
             loader: require.resolve('url-loader'),
             options: {
               limit: 10000,
-              name: 'static/media/[name].[hash:8].[ext]',
-            },
+              name: 'static/media/[name].[hash:8].[ext]'
+            }
           },
           // Process application JS with Babel.
           // The preset includes JSX, Flow, and some ESnext features.
@@ -252,23 +273,38 @@ module.exports = {
                   babelrc: false,
                   // @remove-on-eject-end
                   presets: [require.resolve('babel-preset-react-app')],
-                  plugins: [
-                    [
-                      require.resolve('babel-plugin-named-asset-import'),
-                      {
-                        loaderMap: {
-                          svg: {
-                            ReactComponent: 'svgr/webpack![path]',
-                          },
-                        },
-                      },
-                    ],
-                  ],
                   compact: true,
-                  highlightCode: true,
-                },
+                  highlightCode: true
+                }
+              }
+            ]
+          },
+          {
+            test: /\.(ts|tsx)$/,
+            include: paths.srcPaths,
+            exclude: [/[/\\\\]node_modules[/\\\\]/],
+            use: [
+              {
+                loader: require.resolve('babel-loader'),
+                options: {
+                  // @remove-on-eject-begin
+                  babelrc: false,
+                  // @remove-on-eject-end
+                  presets: [require.resolve('babel-preset-react-app')],
+                  // This is a feature of `babel-loader` for webpack (not Babel itself).
+                  // It enables caching results in ./node_modules/.cache/babel-loader/
+                  // directory for faster rebuilds.
+                  cacheDirectory: true,
+                  highlightCode: true
+                }
               },
-            ],
+              {
+                loader: 'ts-loader',
+                options: {
+                  transpileOnly: true
+                }
+              }
+            ]
           },
           // Process any JS outside of the app with Babel.
           // Unlike the application JS, we only compile the standard ES features.
@@ -284,13 +320,13 @@ module.exports = {
                   babelrc: false,
                   compact: false,
                   presets: [
-                    require.resolve('babel-preset-react-app/dependencies'),
+                    require.resolve('babel-preset-react-app/dependencies')
                   ],
                   cacheDirectory: true,
-                  highlightCode: true,
-                },
-              },
-            ],
+                  highlightCode: true
+                }
+              }
+            ]
           },
           // The notation here is somewhat confusing.
           // "postcss" loader applies autoprefixer to our CSS.
@@ -311,8 +347,8 @@ module.exports = {
             loader: getStyleLoaders({
               importLoaders: 1,
               minimize: true,
-              sourceMap: shouldUseSourceMap,
-            }),
+              sourceMap: shouldUseSourceMap
+            })
             // Note: this won't work without `new ExtractTextPlugin()` in `plugins`.
           },
           // Adds support for CSS Modules (https://github.com/css-modules/css-modules)
@@ -324,8 +360,8 @@ module.exports = {
               minimize: true,
               sourceMap: shouldUseSourceMap,
               modules: true,
-              getLocalIdent: getCSSModuleLocalIdent,
-            }),
+              getLocalIdent: getCSSModuleLocalIdent
+            })
             // Note: this won't work without `new ExtractTextPlugin()` in `plugins`.
           },
           // Opt-in support for SASS. The logic here is somewhat similar
@@ -340,10 +376,10 @@ module.exports = {
               {
                 importLoaders: 2,
                 minimize: true,
-                sourceMap: shouldUseSourceMap,
+                sourceMap: shouldUseSourceMap
               },
               'sass-loader'
-            ),
+            )
             // Note: this won't work without `new ExtractTextPlugin()` in `plugins`.
           },
           // Adds support for CSS Modules, but using SASS
@@ -356,16 +392,34 @@ module.exports = {
                 minimize: true,
                 sourceMap: shouldUseSourceMap,
                 modules: true,
-                getLocalIdent: getCSSModuleLocalIdent,
+                getLocalIdent: getCSSModuleLocalIdent
               },
               'sass-loader'
-            ),
+            )
             // Note: this won't work without `new ExtractTextPlugin()` in `plugins`.
+          },
+          {
+            test: /\.less$/,
+            exclude: sassModuleRegex,
+            use: getStyleLoaders({ importLoaders: 2 }, 'less-loader')
+          },
+          // Adds support for CSS Modules, but using SASS
+          // using the extension .module.scss or .module.sass
+          {
+            test: /\.module\.less$/,
+            use: getStyleLoaders(
+              {
+                importLoaders: 2,
+                modules: true,
+                getLocalIdent: getCSSModuleLocalIdent
+              },
+              'less-loader'
+            )
           },
           // The GraphQL loader preprocesses GraphQL queries in .graphql files.
           {
             test: /\.(graphql)$/,
-            loader: 'graphql-tag/loader',
+            loader: 'graphql-tag/loader'
           },
           // "file" loader makes sure assets end up in the `build` folder.
           // When you `import` an asset, you get its filename.
@@ -379,14 +433,14 @@ module.exports = {
             // by webpacks internal loaders.
             exclude: [/\.(js|jsx|mjs)$/, /\.html$/, /\.json$/],
             options: {
-              name: 'static/media/[name].[hash:8].[ext]',
-            },
-          },
+              name: 'static/media/[name].[hash:8].[ext]'
+            }
+          }
           // ** STOP ** Are you adding a new loader?
           // Make sure to add the new loader(s) before the "file" loader.
-        ],
-      },
-    ],
+        ]
+      }
+    ]
   },
   plugins: [
     // Makes some environment variables available in index.html.
@@ -409,8 +463,8 @@ module.exports = {
         keepClosingSlash: true,
         minifyJS: true,
         minifyCSS: true,
-        minifyURLs: true,
-      },
+        minifyURLs: true
+      }
     }),
     // Makes some environment variables available to the JS code, for example:
     // if (process.env.NODE_ENV === 'production') { ... }. See `./env.js`.
@@ -426,7 +480,7 @@ module.exports = {
           // into invalid ecma 5 code. This is why the 'compress' and 'output'
           // sections only apply transformations that are ecma 5 safe
           // https://github.com/facebook/create-react-app/pull/4234
-          ecma: 8,
+          ecma: 8
         },
         compress: {
           ecma: 5,
@@ -435,36 +489,36 @@ module.exports = {
           // https://github.com/facebook/create-react-app/issues/2376
           // Pending further investigation:
           // https://github.com/mishoo/UglifyJS2/issues/2011
-          comparisons: false,
+          comparisons: false
         },
         mangle: {
-          safari10: true,
+          safari10: true
         },
         output: {
           ecma: 5,
           comments: false,
           // Turned on because emoji and regex is not minified properly using default
           // https://github.com/facebook/create-react-app/issues/2488
-          ascii_only: true,
-        },
+          ascii_only: true
+        }
       },
       // Use multi-process parallel running to improve the build speed
       // Default number of concurrent runs: os.cpus().length - 1
       parallel: true,
       // Enable file caching
       cache: true,
-      sourceMap: shouldUseSourceMap,
+      sourceMap: shouldUseSourceMap
     }),
     // Note: this won't work without ExtractTextPlugin.extract(..) in `loaders`.
     new ExtractTextPlugin({
-      filename: cssFilename,
+      filename: cssFilename
     }),
     // Generate a manifest file which contains a mapping of all asset filenames
     // to their corresponding output file so that tools can pick it up without
     // having to parse `index.html`.
     new ManifestPlugin({
       fileName: 'asset-manifest.json',
-      publicPath: publicPath,
+      publicPath: publicPath
     }),
     // Generate a service worker script that will precache, and keep up to date,
     // the HTML & assets that are part of the Webpack build.
@@ -489,7 +543,7 @@ module.exports = {
       },
       minify: true,
       // Don't precache sourcemaps (they're large) and build asset manifest:
-      staticFileGlobsIgnorePatterns: [/\.map$/, /asset-manifest\.json$/],
+      staticFileGlobsIgnorePatterns: [/\.map$/, /asset-manifest\.json$/]
       // `navigateFallback` and `navigateFallbackWhitelist` are disabled by default; see
       // https://github.com/facebook/create-react-app/blob/master/packages/react-scripts/template/README.md#service-worker-considerations
       // navigateFallback: publicUrl + '/index.html',
@@ -500,8 +554,18 @@ module.exports = {
     // solution that requires the user to opt into importing specific locales.
     // https://github.com/jmblog/how-to-optimize-momentjs-with-webpack
     // You can remove this if you don't use Moment.js:
-    new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
-  ],
+    new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/)
+  ].concat(
+    LANG === 'typescript'
+      ? [
+          new ForkTsCheckerWebpackPlugin({
+            async: false,
+            tsconfig: paths.appTsProdConfig,
+            tslint: paths.appTsLint
+          })
+        ]
+      : []
+  ),
   // Some libraries import Node modules but don't use them in the browser.
   // Tell Webpack to provide empty mocks for them so importing them works.
   node: {
@@ -509,6 +573,6 @@ module.exports = {
     fs: 'empty',
     net: 'empty',
     tls: 'empty',
-    child_process: 'empty',
-  },
+    child_process: 'empty'
+  }
 };
