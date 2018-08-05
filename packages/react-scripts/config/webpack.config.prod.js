@@ -62,27 +62,32 @@ const extractTextPluginOptions = shouldUseRelativeAssetPaths
 // Options for PostCSS as we reference these options twice
 // Adds vendor prefixing based on your specified browser support in
 // package.json
+const postCSSLoaderPlugins = [
+  require('postcss-flexbugs-fixes'),
+  autoprefixer({
+    flexbox: 'no-2009'
+  }),
+  require('postcss-url')({
+    url: function(asset) {
+      if (asset.url.charAt(0) === '/') {
+        return publicUrl + asset.url;
+      }
+      return asset.url;
+    }
+  })
+];
+if (env.raw.REACT_APP_REM_UNIT) {
+  postCSSLoaderPlugins.push(
+    require('postcss-px2rem')({
+      remUnit: env.raw.REACT_APP_REM_UNIT
+    })
+  );
+}
 const postCSSLoaderOptions = {
   // Necessary for external CSS imports to work
   // https://github.com/facebook/create-react-app/issues/2677
   ident: 'postcss',
-  plugins: () => [
-    require('postcss-flexbugs-fixes'),
-    autoprefixer({
-      flexbox: 'no-2009'
-    }),
-    require('postcss-url')({
-      url: function(asset) {
-        if (asset.url.charAt(0) === '/') {
-          return publicUrl + asset.url;
-        }
-        return asset.url;
-      }
-    }),
-    require('postcss-px2rem')({
-      remUnit: env.raw.REM_UNIT
-    })
-  ],
+  plugins: postCSSLoaderPlugins,
   sourceMap: shouldUseSourceMap
 };
 
