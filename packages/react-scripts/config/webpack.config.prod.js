@@ -78,6 +78,9 @@ const postCSSLoaderOptions = {
         }
         return asset.url;
       }
+    }),
+    require('postcss-px2rem')({
+      remUnit: env.raw.REM_UNIT
     })
   ],
   sourceMap: shouldUseSourceMap

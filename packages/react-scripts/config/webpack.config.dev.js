@@ -44,6 +44,9 @@ const postCSSLoaderOptions = {
     require('postcss-flexbugs-fixes'),
     autoprefixer({
       flexbox: 'no-2009'
+    }),
+    require('postcss-px2rem')({
+      remUnit: env.raw.REM_UNIT
     })
   ]
 };
